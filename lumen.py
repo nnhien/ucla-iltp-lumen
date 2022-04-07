@@ -29,11 +29,10 @@ print(f'Querying page 2')
 
 try:
     while r['meta']['next']:
+        print(f'Querying page {r["meta"]["pageNum"]}')
         r = requests.get(r['meta']['next']).json()
         populate_orgs(r)
-        print(f'Querying page {r["meta"]["pageNum"] + 1}')
 except KeyError:
-    print(f'Nevermind, there is no page {r["meta"]["pageNum"] + 1}')
     pass
 
 print(f'Found {len(organizations)} organizations from CPJ')
@@ -46,13 +45,13 @@ headers = \
     'Content-Type': 'application/json' 
 }
 
-notices = []
+notices = {}
 
 for org in organizations:
     print(f'Querying Lumen for {org}...')
     params = {'recipient_name': org, 'recipient_name-require-all': True }
     r = requests.get(LUMEN_BASE_URL, params=params, headers=headers).json()
-    notices.extend(r['notices'])
+    notices[org].extend(r['notices'])
     time.sleep(1)
 
 print(f'Found {len(notices)} DMCA notices from Lumen!')
