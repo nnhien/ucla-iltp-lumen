@@ -1,7 +1,7 @@
 import requests
 import os
 import csv
-import time
+import datetime
 import json
 
 LUMEN_BASE_URL="https://lumendatabase.org/notices/search"
@@ -22,10 +22,8 @@ def populate_orgs(r):
             organizations.add(org)
 
 # Get set of all organizations from CPJ
-print(f'Querying page 1')
 r = requests.get(CPJ_BASE_URL).json()
 populate_orgs(r)
-print(f'Querying page 2')
 
 try:
     while r['meta']['next']:
@@ -47,22 +45,28 @@ headers = \
 
 notices = {}
 
+
 for org in organizations:
     print(f'Querying Lumen for {org}...')
-    params = {'recipient_name': org, 'recipient_name-require-all': True }
+    if org not in notices:
+        notices[org] = []
+    params = {'recipient_name': org }
     r = requests.get(LUMEN_BASE_URL, params=params, headers=headers).json()
     notices[org].extend(r['notices'])
-    time.sleep(1)
+
+    # If there are more pages, grab those too
+    if r['meta']['total_pages'] > 1:
+        print(f'{org} has {r["meta"]["total_pages"]} pages of results')
+        for page in range(2, r['meta']['total_pages'] + 1):
+            print(f'Querying page {page}')
+            params['page'] = page
+            r = requests.get(LUMEN_BASE_URL, params=params, headers=headers).json()
+            notices[org].extend(r['notices'])
 
 print(f'Found {len(notices)} DMCA notices from Lumen!')
 
 # Print notices just in case so we don't have to fetch it again
-with open('notices.txt', 'w') as txt_file:
+with open('notices.json', 'w') as txt_file:
     json.dump(notices, txt_file)
 
-print(f'Writing to CSV...')
-with open('notices.csv', 'wb') as csv_file:
-        wr = csv.DictWriter(csv_file, fieldnames=list(notices[0].keys()))
-        wr.writeheader()
-        wr.writerows(notice)
 print('Done!')
