@@ -22,16 +22,26 @@ def populate_orgs(r):
             organizations.add(org)
 
 # Get set of all organizations from CPJ
-r = requests.get(CPJ_BASE_URL).json()
-populate_orgs(r)
 
+# See if we have a list already cached
 try:
-    while r['meta']['next']:
-        print(f'Querying page {r["meta"]["pageNum"]}')
-        r = requests.get(r['meta']['next']).json()
-        populate_orgs(r)
-except KeyError:
-    pass
+    with open('orgs.json', 'r') as orgs_file:
+        print('Found cached file!')
+        organizations = set(json.loads(orgs_file.readline()))
+except FileNotFoundError:
+    r = requests.get(CPJ_BASE_URL).json()
+    populate_orgs(r)
+
+    try:
+        while r['meta']['next']:
+            print(f'Querying page {r["meta"]["pageNum"]}')
+            r = requests.get(r['meta']['next']).json()
+            populate_orgs(r)
+    except KeyError:
+        pass
+
+    with open('orgs.json', 'w') as orgs_file:
+        orgs_file.write(json.dumps(list(organizations)))
 
 print(f'Found {len(organizations)} organizations from CPJ')
 
