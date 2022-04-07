@@ -56,14 +56,20 @@ headers = \
 
 notices = {}
 
-for org in organizations:
+def add_notices(org, response):
     try:
+        notices[org].extend(response['notices'])
+    except KeyError:
+        # Ignore any missing keys due to inconsistent API response (smh)
+        pass
+
+for org in organizations:
         print(f'Querying Lumen for {org}...')
         if org not in notices:
             notices[org] = []
         params = {'recipient_name': org }
         r = requests.get(LUMEN_BASE_URL, params=params, headers=headers).json()
-        notices[org].extend(r['notices'])
+        add_notices(org, r)
 
         # If there are more pages, grab those too
         if r['meta']['total_pages'] > 1:
@@ -72,10 +78,7 @@ for org in organizations:
                 print(f'Querying page {page}')
                 params['page'] = page
                 r = requests.get(LUMEN_BASE_URL, params=params, headers=headers).json()
-                notices[org].extend(r['notices'])
-    except KeyError:
-        # Ignore any missing keys due to inconsistent API response (smh)
-        pass
+                add_notices(org, r)
 
 print(f'Found {len(notices)} DMCA notices from Lumen!')
 
