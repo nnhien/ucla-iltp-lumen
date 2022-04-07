@@ -24,6 +24,7 @@ def populate_orgs(r):
 # Get set of all organizations from CPJ
 
 # See if we have a list already cached
+print('Querying CPJ for list of organizations')
 try:
     with open('orgs.json', 'r') as orgs_file:
         print('Found cached file!')
