@@ -56,23 +56,26 @@ headers = \
 
 notices = {}
 
-
 for org in organizations:
-    print(f'Querying Lumen for {org}...')
-    if org not in notices:
-        notices[org] = []
-    params = {'recipient_name': org }
-    r = requests.get(LUMEN_BASE_URL, params=params, headers=headers).json()
-    notices[org].extend(r['notices'])
+    try:
+        print(f'Querying Lumen for {org}...')
+        if org not in notices:
+            notices[org] = []
+        params = {'recipient_name': org }
+        r = requests.get(LUMEN_BASE_URL, params=params, headers=headers).json()
+        notices[org].extend(r['notices'])
 
-    # If there are more pages, grab those too
-    if r['meta']['total_pages'] > 1:
-        print(f'{org} has {r["meta"]["total_pages"]} pages of results')
-        for page in range(2, r['meta']['total_pages'] + 1):
-            print(f'Querying page {page}')
-            params['page'] = page
-            r = requests.get(LUMEN_BASE_URL, params=params, headers=headers).json()
-            notices[org].extend(r['notices'])
+        # If there are more pages, grab those too
+        if r['meta']['total_pages'] > 1:
+            print(f'{org} has {r["meta"]["total_pages"]} pages of results')
+            for page in range(2, r['meta']['total_pages'] + 1):
+                print(f'Querying page {page}')
+                params['page'] = page
+                r = requests.get(LUMEN_BASE_URL, params=params, headers=headers).json()
+                notices[org].extend(r['notices'])
+    except KeyError:
+        # Ignore any missing keys due to inconsistent API response (smh)
+        pass
 
 print(f'Found {len(notices)} DMCA notices from Lumen!')
 
